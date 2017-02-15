@@ -55,15 +55,16 @@ defimpl Scrivener.Paginater, for: Ecto.Query do
   end
 
   defp total_entries(query, repo) do
-    total_entries =
-      query
-      |> exclude(:preload)
-      |> exclude(:select)
-      |> subquery
-      |> select(count("*"))
-      |> repo.one
+    primary_key = query.from    
+    |> elem(1)    
+    |> apply(:__schema__, [:primary_key])   
+    |> hd   
 
-    total_entries || 0
+    query   
+    |> remove_clauses   
+    |> exclude(:order_by)   
+    |> select([m], count(field(m, ^primary_key), :distinct))    
+    |> repo.one!
   end
 
   defp total_pages(total_entries, page_size) do
